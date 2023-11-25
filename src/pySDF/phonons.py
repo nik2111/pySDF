@@ -2,7 +2,7 @@ import qutip as qt
 
 class PhononOperators(object):
     '''
-    Class for boson operators for n bosons
+    Class for phonon operators for n Harmonic Oscillators
     Parameters
     ----------
     n : int
@@ -47,7 +47,7 @@ class PhononOperators(object):
         qutip.Qobj
             annihilation operator for mth boson
         '''
-        assert m <= self.n, "boson number should be less than the number of bosons"
+        assert m < self.n, "boson number should be less than the number of bosons"
         
         if self.n == 1:
             return self._a()
@@ -72,4 +72,46 @@ class PhononOperators(object):
             return self._adag()
         else:
             return qt.tensor( [self._adag() if i==m else qt.qeye(self.dim) for i in range(self.n)] )
+
+    @property   
+    def I(self):
+        '''
+        identity operator for n bosons
+        Returns
+        -------
+        qutip.Qobj
+            identity operator for n bosons
+        '''
+        if self.n == 1:
+            return qt.qeye(self.dim)
+        else:
+            return qt.tensor( [qt.qeye(self.dim) for i in range(self.n)] )
     
+class PhononStates:
+    '''
+    Class for phonon states
+    Parameters
+    ----------
+    n : int
+        number of Harmonic Oscillators
+    dim : int
+        dimension of the Hilbert space for each Harmonic oscillator
+    '''
+    def __init__(self,n,dim) -> None:
+        self.n = n
+        self.dim = dim
+    
+    @property
+    def vacuum(self):
+        '''
+        Returns
+        -------
+        qutip.Qobj
+            vacuum state for n Oscillators
+        '''
+        if self.n == 1:
+            return qt.basis(self.dim,0)
+        else:
+            return qt.tensor( [qt.basis(self.dim,0) for i in range(self.n)] )
+        
+        
