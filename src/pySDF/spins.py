@@ -126,6 +126,18 @@ class SpinOperators(object):
         """
         return sum([self.sigmaZ(i) for i in range(self.n)])
     
+    def I(self):
+        """
+        Identity operator for all spins
+        Returns
+        -------
+        qutip.Qobj
+        Identity operator for all spins
+
+        """
+        return qt.tensor([qt.qeye(2) for i in range(self.n)])
+        
+    
     def sigmaPhiSum(self,phi):
         """
         Sum of sigmaPhi operators for all spins

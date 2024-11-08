@@ -2,6 +2,7 @@ from .spins import *
 from .phonons import *
 import abc
 import itertools
+from typing import Union
 
 class SpinPhononHamiltonian(abc.ABC):
     """
@@ -10,7 +11,7 @@ class SpinPhononHamiltonian(abc.ABC):
     """
     
     def __init__(self,spins : int, oscillators : int ,oscDim : int,
-                 trapFreqs : float or np.ndarray, H : qt.Qobj,args : dict,
+                 trapFreqs : Union[float, np.ndarray], H : qt.Qobj,args : dict,
                  hType : str, tag : str) -> None:
         self.spins = spins
         self.oscilators = oscillators
@@ -79,15 +80,20 @@ class SpinDepForce(SpinPhononHamiltonian):
         dimension of the oscillator Hilbert space
     trapFreqs : float or vector
         vector of size phonons containing the trap frequencies of the ions
+    tag : str, optional
+        unique identifier for the Hamiltonian. If not provided, a unique id will be generated based on an internal counter.
+    hDef : str, optional
+        Hamiltonian definition as per https://qutip.org/docs/latest/guide/dynamics/dynamics-time.html.
+        If 'str', the Hamiltonian will be defined as a string. If 'func', the Hamiltonian will be defined as a function. The default is 'str'.
 
     """
     _idIter = itertools.count()
 
     def __init__(self,spins : int, oscillators : int ,detuning : float,
                  spinPhase : float, motionalPhase : float,
-                 eta : float or np.ndarray ,rabi : float or np.ndarray, 
-                 oscDim : int, trapFreqs : float or np.ndarray,
-                 tag : str = None, hDef : str = 'str') -> None:         
+                 eta : Union[float, np.ndarray] ,rabi : Union[float, np.ndarray], 
+                 oscDim : int, trapFreqs : Union[float, np.ndarray],
+                 tag : str = None, hDef : str = 'str', carrier : bool = True) -> None:         
 
         self.spins = spins
         self.oscilators = oscillators
@@ -98,7 +104,9 @@ class SpinDepForce(SpinPhononHamiltonian):
         self.rabi = rabi
         self.osc_dim = oscDim
         self.trapFreqs = trapFreqs
-        self.hDef = hDef
+        self.hDef = hDef # determines if time dependent Hamiltonian is defined as a string or a function 
+        #see qutip time dependent Hamiltonian definition for more details
+        self.carrier = carrier
         
         if tag is not None:
             self.tag = tag
@@ -159,10 +167,11 @@ class SpinDepForce(SpinPhononHamiltonian):
         
         if self.hDef == 'str':
             # Creating the carrier term
-            for i in range(self.spins):
-                H_carr = qt.tensor( [spins.sigmaPhi(self.spinPhase - np.pi/2,i), phonons.I] )
-                H_time = f" rabi{i}_SDF{self.tag} * cos( detuning_SDF{self.tag} * t + {self.motionalPhase} ) "
-                H.append([H_carr,H_time])
+            if self.carrier:
+                for i in range(self.spins):
+                    H_carr = qt.tensor( [spins.sigmaPhi(self.spinPhase - np.pi/2,i), phonons.I] )
+                    H_time = f" rabi{i}_SDF{self.tag} * cos( detuning_SDF{self.tag} * t + {self.motionalPhase} ) "
+                    H.append([H_carr,H_time])
 
             # Creating the Force terms with negative exponentials
             for i in range(self.spins):
@@ -180,10 +189,11 @@ class SpinDepForce(SpinPhononHamiltonian):
         
         elif self.hDef == 'func':
             # Creating the carrier term
-            for i in range(self.spins):
-                H_carr = qt.tensor( [spins.sigmaPhi(self.spinPhase - np.pi/2,i), phonons.I] )
-                H_time = lambda t, args: args[f"rabi{i}_SDF{self.tag}"] * np.cos( args[f"detuning_SDF{self.tag}"] * t + self.motionalPhase )
-                H.append([H_carr,H_time])
+            if self.carrier:
+                for i in range(self.spins):
+                    H_carr = qt.tensor( [spins.sigmaPhi(self.spinPhase - np.pi/2,i), phonons.I] )
+                    H_time = lambda t, args: args[f"rabi{i}_SDF{self.tag}"] * np.cos( args[f"detuning_SDF{self.tag}"] * t + self.motionalPhase )
+                    H.append([H_carr,H_time])
 
             # Creating the Force terms with negative exponentials
             for i in range(self.spins):
@@ -213,14 +223,3 @@ class SpinDepForce(SpinPhononHamiltonian):
             args[f"rabi{i}_SDF{self.tag}"] = self.rabi[i]
         args[f"detuning_SDF{self.tag}"] = self.detuning
         return args
-    
-    
-        
-
-    
-    
-
-
-
-
-
