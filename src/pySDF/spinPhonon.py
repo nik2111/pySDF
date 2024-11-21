@@ -39,7 +39,7 @@ class SpinPhononHamiltonian(abc.ABC):
         return SpinPhononHamiltonian(self.spins,self.oscilators,self.osc_dim,self.trapFreqs,H,args,hType,id)
 
 
-    def evolve(self,psi0 : qt.Qobj, t : float, opts : qt.Options = None) -> qt.Qobj:
+    def evolve(self,psi0 : qt.Qobj, t : float, c_ops : list = None, e_ops : list = None,  opts : qt.Options = None) -> qt.Qobj:
         """
         Parameters
         ----------
@@ -47,6 +47,11 @@ class SpinPhononHamiltonian(abc.ABC):
             initial state
         t : vector
             time
+        c_ops : list of qutip.Qobj
+            collapse operators
+        e_ops : list of qutip.Qobj
+            expectation operators
+        opts : qutip.Options, optional options for the solver. The default is None.
         Returns
         -------
         qutip.Qobj
@@ -55,7 +60,7 @@ class SpinPhononHamiltonian(abc.ABC):
         if opts is None:
             opts = qt.Options(nsteps=100000)
         
-        return qt.mesolve(self.H,psi0,t,args=self.args,options=opts)
+        return qt.mesolve(self.H,psi0,t,c_ops=c_ops, e_ops=e_ops, args=self.args,options=opts)
 
 class SpinDepForce(SpinPhononHamiltonian):
     """
